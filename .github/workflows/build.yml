@@ -38,7 +38,7 @@ jobs:
             -DMOD_AUTHOR="Say" \
             -DMOD_VERSION=1.0.0 \
             -DMOD_LIBRARY_NAME=levivision \
-            -DMOD_MINECRAFT_VERSIONS='["1.21.100*"]' \
+            -DMOD_MINECR-DMOD_MINECRAFT_VERSIONS='["1.21.100*", "1.26.33*", "1.26.*"]' \AFT_VERSIONS='["1.21.100*"]' \
             -DMOD_ICON="assets/icon.png"
 
       - name: Build + Package

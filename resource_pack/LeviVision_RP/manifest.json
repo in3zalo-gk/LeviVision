@@ -1,0 +1,17 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "LeviVision RP — X-Ray + Glow Ores",
+    "description": "X-Ray (invisible terrain) + highlighted ores for LeviVision. Ore textures adapted from Sea-Through (Dodi Dev).",
+    "uuid": "c4f8a21e-9b3d-4e6a-8f01-2d7c5b9e4a10",
+    "version": [1, 1, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "d5e9b32f-0c4e-5f7b-9a12-3e8d6c0f5b21",
+      "version": [1, 1, 0]
+    }
+  ]
+}

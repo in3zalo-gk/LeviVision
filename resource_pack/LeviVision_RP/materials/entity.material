@@ -1,0 +1,16 @@
+{
+  "materials": {
+    "version": "1.0.0",
+    "levivision_emissive": {
+      "+defines": [
+        "USE_EMISSIVE"
+      ],
+      "+states": [
+        "Blending",
+        "DisableCulling"
+      ],
+      "vertexShader": "shaders/color_uv.vertex",
+      "fragmentShader": "shaders/texture_emissive.fragment"
+    }
+  }
+}

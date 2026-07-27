@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "nightVision": false,
+  "xray": false,
+  "glowOres": false,
+  "outline": true,
+  "renderDistance": 128,
+  "transparency": 90,
+  "glowStrength": 100
+}

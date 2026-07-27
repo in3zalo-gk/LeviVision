@@ -1,0 +1,61 @@
+{
+  "type": "object",
+  "title": "LeviVision Config",
+  "description": "Persistent settings for LeviVision visual modules.",
+  "properties": {
+    "version": {
+      "type": "integer",
+      "title": "Version",
+      "default": 1,
+      "readOnly": true
+    },
+    "nightVision": {
+      "type": "boolean",
+      "title": "Night Vision",
+      "description": "Enables full brightness / night vision effect.",
+      "default": false
+    },
+    "xray": {
+      "type": "boolean",
+      "title": "X-Ray",
+      "description": "Makes non-ore blocks transparent to reveal ores.",
+      "default": false
+    },
+    "glowOres": {
+      "type": "boolean",
+      "title": "Glow Ores",
+      "description": "Applies emissive highlight to ore blocks.",
+      "default": false
+    },
+    "outline": {
+      "type": "boolean",
+      "title": "Outline",
+      "description": "Draws outline around highlighted ores.",
+      "default": true
+    },
+    "renderDistance": {
+      "type": "integer",
+      "title": "Render Distance",
+      "description": "Block radius used by X-Ray / Glow scanning.",
+      "default": 128,
+      "minimum": 16,
+      "maximum": 512
+    },
+    "transparency": {
+      "type": "integer",
+      "title": "Transparency",
+      "description": "Opacity of non-ore blocks when X-Ray is enabled (0-100).",
+      "default": 90,
+      "minimum": 0,
+      "maximum": 100
+    },
+    "glowStrength": {
+      "type": "integer",
+      "title": "Glow Strength",
+      "description": "Intensity of the emissive ore highlight (0-100).",
+      "default": 100,
+      "minimum": 0,
+      "maximum": 100
+    }
+  }
+}

@@ -87,7 +87,9 @@ void onConfigChanged(std::string_view /*moduleId*/, std::string_view key,
     mod.saveConfig();
 }
 
-void onFloatingButton(std::string_view /*buttonId*/, ButtonEvent event, float /*value*/) {
+// Currently unused: onEvent callback for the floating button, which is
+// temporarily disabled (see registerButtons() below).
+[[maybe_unused]] void onFloatingButton(std::string_view /*buttonId*/, ButtonEvent event, float /*value*/) {
     if (event != ButtonEvent::Click)
         return;
 
@@ -166,6 +168,17 @@ bool ModMenu::unregisterModules() {
 }
 
 bool ModMenu::registerButtons() {
+    // DISABLED: the floating quick-toggle button was crashing the launcher
+    // with SIGSEGV inside pl::modmenu::registerButton() (confirmed via
+    // xCrash tombstone — memcpy inside libpreloader.so's internal button
+    // registration path). The main config module (Night Vision / X-Ray /
+    // Glow Ores toggles) does not go through this code path and is
+    // unaffected. Re-enable once the exact cause is confirmed against the
+    // real preloader-android headers/source.
+    (void)0;
+    return true;
+
+    /*
     auto *native = pl::mod::NativeMod::current();
     if (!native)
         return false;
@@ -186,6 +199,7 @@ bool ModMenu::registerButtons() {
 
     native->getLogger().info("Floating button LV registered.");
     return true;
+    */
 }
 
 bool ModMenu::unregisterButtons() {

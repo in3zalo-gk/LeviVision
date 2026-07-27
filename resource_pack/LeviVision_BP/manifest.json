@@ -1,0 +1,17 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "LeviVision BP - Night Vision",
+    "description": "Companion behavior pack for LeviVision. Grants continuous Night Vision without disabling achievements.",
+    "uuid": "016936fd-534a-4385-b7e9-9f63e4ce6924",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "d5da6753-0bdb-4960-af1f-89e17a79a98e",
+      "version": [1, 0, 0]
+    }
+  ]
+}

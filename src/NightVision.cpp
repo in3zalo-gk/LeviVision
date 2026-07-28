@@ -1,5 +1,7 @@
 #include "NightVision.h"
 
+#include "GameSettings.h"
+
 #include <pl/Mod.hpp>
 
 bool NightVision::mEnabled = false;
@@ -22,11 +24,13 @@ void NightVision::setEnabled(bool enabled) {
         mod->getLogger().info("Night Vision: {}", enabled ? "ON" : "OFF");
     }
 
-    // NOTE: the actual Night Vision effect is delivered by the companion
-    // "LeviVision_BP" behavior pack (functions/tick.json), which is
-    // achievement-safe and does not require native memory hooks. This flag
-    // is kept for the config UI / preference tracking and for any future
-    // native hook that may complement it.
+    // NOTE: the actual Night Vision effect is delivered two ways:
+    //  1) Extreme gamma override in options.txt (setExtremeGamma below) -
+    //     real, immediate, works on any server, but only applies after a
+    //     full game restart (options.txt is read once at startup).
+    //  2) The companion "LeviVision_BP" behavior pack (Script API), which
+    //     only works in worlds this device hosts.
+    levivision::gamesettings::setExtremeGamma(enabled);
     update();
 }
 

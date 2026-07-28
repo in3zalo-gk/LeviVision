@@ -1,5 +1,7 @@
 #pragma once
 
+#include <filesystem>
+
 namespace levivision::packs {
 
 /// Copies the bundled LeviVision_RP / LeviVision_BP folders (shipped inside
@@ -17,5 +19,10 @@ namespace levivision::packs {
 /// automatically to resource packs; Mojang requires explicit per-world
 /// opt-in for behavior packs).
 bool installBundledPacks();
+
+/// Locates the running game's com.mojang folder (contains resource_packs/,
+/// minecraftpe/options.txt, etc). Returns an empty path if it could not be
+/// found. Shared with GameSettings.cpp so both use identical detection logic.
+std::filesystem::path findGameComMojangDir();
 
 } // namespace levivision::packs

@@ -126,6 +126,7 @@ add_library(${MOD_LIBRARY_NAME} SHARED
     src/GlowOres.cpp
     src/Hooks.cpp
     src/PackInstaller.cpp
+    src/GameSettings.cpp
     src/Utils.cpp
 )
 

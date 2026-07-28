@@ -65,10 +65,12 @@ std::vector<fs::path> candidateComMojangDirs(const fs::path &modDir) {
     return candidates;
 }
 
-fs::path findComMojangDir(const fs::path &modDir, pl::log::Logger &logger) {
+std::filesystem::path findComMojangDirImpl(const fs::path &modDir, pl::log::Logger &logger) {
     for (const auto &candidate : candidateComMojangDirs(modDir)) {
         std::error_code ec;
-        if (fs::exists(candidate / "resource_packs", ec) && !ec) {
+        const bool found = fs::exists(candidate / "resource_packs", ec) && !ec;
+        logger.info("  checking: {} -> {}", candidate.string(), found ? "FOUND" : "no");
+        if (found) {
             logger.info("Found com.mojang at: {}", candidate.string());
             return candidate;
         }
@@ -158,7 +160,7 @@ bool installBundledPacks() {
     const fs::path rpSource = bundledResources / "LeviVision_RP";
     const fs::path bpSource = bundledResources / "LeviVision_BP";
 
-    const fs::path comMojang = findComMojangDir(native->getModDir(), logger);
+    const fs::path comMojang = findComMojangDirImpl(native->getModDir(), logger);
     if (comMojang.empty())
         return false;
 
@@ -175,6 +177,13 @@ bool installBundledPacks() {
     }
 
     return rpOk || bpOk;
+}
+
+std::filesystem::path findGameComMojangDir() {
+    auto *native = pl::mod::NativeMod::current();
+    if (!native)
+        return {};
+    return findComMojangDirImpl(native->getModDir(), native->getLogger());
 }
 
 } // namespace levivision::packs

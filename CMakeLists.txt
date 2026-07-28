@@ -125,6 +125,7 @@ add_library(${MOD_LIBRARY_NAME} SHARED
     src/XRay.cpp
     src/GlowOres.cpp
     src/Hooks.cpp
+    src/PackInstaller.cpp
     src/Utils.cpp
 )
 
@@ -186,6 +187,11 @@ set(LEVI_PACKAGE_FILE "${CMAKE_CURRENT_BINARY_DIR}/${MOD_ID}-${MOD_VERSION}-${CM
 set(LEVI_PACKAGE_ICON_COMMAND)
 set(LEVI_PACKAGE_CONFIG_COMMAND
     COMMAND "${CMAKE_COMMAND}" -E copy_directory "${LEVI_PACKAGE_CONFIG_DIR}" "${LEVI_PACKAGE_MOD_DIR}/config")
+set(LEVI_PACKAGE_RESOURCES_COMMAND)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/resources")
+    list(APPEND LEVI_PACKAGE_RESOURCES_COMMAND
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/resources" "${LEVI_PACKAGE_MOD_DIR}/resources")
+endif()
 
 if(NOT MOD_ICON STREQUAL "")
     if(IS_ABSOLUTE "${MOD_ICON}")
@@ -217,6 +223,7 @@ add_custom_target(levi_package
     COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_BINARY_DIR}/manifest.json" "${LEVI_PACKAGE_MOD_DIR}/manifest.json"
     ${LEVI_PACKAGE_ICON_COMMAND}
     ${LEVI_PACKAGE_CONFIG_COMMAND}
+    ${LEVI_PACKAGE_RESOURCES_COMMAND}
     COMMAND "${CMAKE_COMMAND}" -E chdir "${LEVI_PACKAGE_ROOT}" "${CMAKE_COMMAND}" -E tar "cf" "${LEVI_PACKAGE_FILE}" --format=zip "${MOD_ID}"
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     DEPENDS ${MOD_LIBRARY_NAME}

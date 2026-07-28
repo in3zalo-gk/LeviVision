@@ -4,11 +4,10 @@
 #include "Hooks.h"
 #include "ModMenu.h"
 #include "NightVision.h"
+#include "PackInstaller.h"
 #include "XRay.h"
 
 #include <filesystem>
-
-#include <pl/Log.hpp>
 
 LeviVision &LeviVision::instance() {
     static LeviVision mod;
@@ -128,6 +127,11 @@ bool LeviVision::enable() {
 
     if (!levivision::hooks::install()) {
         logger.warn("Hook install reported failure (continuing in soft mode).");
+    }
+
+    if (!levivision::packs::installBundledPacks()) {
+        logger.warn("Could not auto-install bundled resource/behavior packs; "
+                    "see previous log lines for details.");
     }
 
     ModMenu::applyConfigToModules();

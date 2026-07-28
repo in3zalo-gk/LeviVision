@@ -47,6 +47,14 @@ bool copyPackDir(const fs::path &from, const fs::path &to, pl::log::Logger &logg
 std::vector<fs::path> candidateComMojangDirs(const fs::path &modDir) {
     std::vector<fs::path> candidates;
 
+    // Confirmed real path on LeviLauncher (found via device inspection):
+    // shared/external media storage, not the app's private data dir.
+    candidates.emplace_back(
+        "/storage/emulated/0/Android/media/org.levimc.launcher/minecraft/_shared/internal/"
+        "games/com.mojang");
+
+    // Walk upward from the mod's own install directory as a fallback, in
+    // case the launcher's layout differs on other devices/versions.
     fs::path cursor = modDir;
     for (int i = 0; i < 8 && cursor.has_parent_path(); ++i) {
         cursor = cursor.parent_path();
@@ -55,7 +63,7 @@ std::vector<fs::path> candidateComMojangDirs(const fs::path &modDir) {
         candidates.push_back(cursor / "com.mojang");
     }
 
-    // Common Android external-storage layouts, tried as a fallback.
+    // Other known Android layouts, tried as a last resort.
     candidates.emplace_back(
         "/storage/emulated/0/Android/data/org.levimc.launcher/files/games/com.mojang");
     candidates.emplace_back(

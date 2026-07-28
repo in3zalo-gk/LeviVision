@@ -22,8 +22,11 @@ void NightVision::setEnabled(bool enabled) {
         mod->getLogger().info("Night Vision: {}", enabled ? "ON" : "OFF");
     }
 
-    // Native brightness / fog hooks go here once signatures are resolved
-    // for the target Minecraft version (see Hooks.cpp).
+    // NOTE: the actual Night Vision effect is delivered by the companion
+    // "LeviVision_BP" behavior pack (functions/tick.json), which is
+    // achievement-safe and does not require native memory hooks. This flag
+    // is kept for the config UI / preference tracking and for any future
+    // native hook that may complement it.
     update();
 }
 

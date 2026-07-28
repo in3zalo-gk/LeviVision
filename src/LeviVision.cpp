@@ -8,6 +8,7 @@
 
 #include <filesystem>
 
+#include <pl/Log.hpp>
 
 LeviVision &LeviVision::instance() {
     static LeviVision mod;

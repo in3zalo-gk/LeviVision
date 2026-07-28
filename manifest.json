@@ -6,7 +6,7 @@
   "entry": "liblevivision.so",
   "icon": "assets/icon.png",
   "minecraft_versions": [
-    "*"
+    "1.21.100*"
   ],
   "overwrite_files": [],
   "overwrite_folders": []

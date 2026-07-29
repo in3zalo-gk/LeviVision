@@ -19,6 +19,9 @@ namespace fs = std::filesystem;
 // what the in-game slider allows (normally clamped to ~1.0).
 constexpr const char *kExtremeGammaValue = "1000000.0";
 constexpr const char *kNormalGammaValue = "1.0";
+// Confirmed real Bedrock options.txt key (NOT "gamma:", which is the
+// Java Edition key name).
+constexpr const char *kGammaKey = "gfx_gamma:";
 
 } // namespace
 
@@ -48,15 +51,15 @@ bool setExtremeGamma(bool enabled) {
     }
 
     const std::string targetValue = enabled ? kExtremeGammaValue : kNormalGammaValue;
-    const std::string newLine = "gamma:" + targetValue;
+    const std::string newLine = std::string(kGammaKey) + targetValue;
 
-    // Replace an existing "gamma:<value>" line, or append one.
+    // Replace an existing "gfx_gamma:<value>" line, or append one.
     std::istringstream lines(content);
     std::ostringstream rebuilt;
     std::string line;
     bool replaced = false;
     while (std::getline(lines, line)) {
-        if (line.rfind("gamma:", 0) == 0) {
+        if (line.rfind(kGammaKey, 0) == 0) {
             rebuilt << newLine << "\n";
             replaced = true;
         } else {

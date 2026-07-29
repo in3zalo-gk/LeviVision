@@ -20,6 +20,11 @@ namespace levivision::packs {
 /// opt-in for behavior packs).
 bool installBundledPacks();
 
+/// Activates or deactivates the LeviVision resource pack (X-Ray/Glow Ores
+/// textures) in global_resource_packs.json. Call with true when either
+/// X-Ray or Glow Ores is enabled, false when both are off.
+bool setResourcePackActive(bool active);
+
 /// Locates the running game's com.mojang folder (contains resource_packs/,
 /// minecraftpe/options.txt, etc). Returns an empty path if it could not be
 /// found. Shared with GameSettings.cpp so both use identical detection logic.

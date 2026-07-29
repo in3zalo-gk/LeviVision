@@ -156,6 +156,55 @@ void registerGlobalResourcePack(const fs::path &comMojangDir, pl::log::Logger &l
     logger.info("LeviVision RP registered in global_resource_packs.json");
 }
 
+// Removes any JSON object containing our pack's uuid from
+// global_resource_packs.json. Simple brace-matched text surgery (no JSON
+// dependency) - if anything looks unexpected, it leaves the file untouched
+// rather than risk corrupting it.
+void unregisterGlobalResourcePack(const fs::path &comMojangDir, pl::log::Logger &logger) {
+    const fs::path jsonPath = comMojangDir / "minecraftpe" / "global_resource_packs.json";
+    if (!fs::exists(jsonPath))
+        return;
+
+    std::ifstream in(jsonPath, std::ios::binary);
+    std::ostringstream ss;
+    ss << in.rdbuf();
+    std::string content = ss.str();
+    in.close();
+
+    auto uuidPos = content.find(kRpUuid);
+    if (uuidPos == std::string::npos)
+        return; // Not present, nothing to do.
+
+    auto objStart = content.rfind('{', uuidPos);
+    auto objEnd = content.find('}', uuidPos);
+    if (objStart == std::string::npos || objEnd == std::string::npos) {
+        logger.warn("unregisterGlobalResourcePack: unexpected JSON shape, leaving file as-is");
+        return;
+    }
+
+    size_t eraseStart = objStart;
+    size_t eraseEnd = objEnd + 1;
+    // Also eat a trailing or leading comma so the array stays valid JSON.
+    if (eraseEnd < content.size() && content[eraseEnd] == ',') {
+        eraseEnd += 1;
+    } else {
+        while (eraseStart > 0 && std::isspace(static_cast<unsigned char>(content[eraseStart - 1])))
+            --eraseStart;
+        if (eraseStart > 0 && content[eraseStart - 1] == ',')
+            --eraseStart;
+    }
+
+    content.erase(eraseStart, eraseEnd - eraseStart);
+
+    std::ofstream out(jsonPath, std::ios::binary | std::ios::trunc);
+    if (!out) {
+        logger.warn("Could not write global_resource_packs.json (unregister)");
+        return;
+    }
+    out << content;
+    logger.info("LeviVision RP removed from global_resource_packs.json");
+}
+
 } // namespace
 
 bool installBundledPacks() {
@@ -192,6 +241,24 @@ std::filesystem::path findGameComMojangDir() {
     if (!native)
         return {};
     return findComMojangDirImpl(native->getModDir(), native->getLogger());
+}
+
+bool setResourcePackActive(bool active) {
+    auto *native = pl::mod::NativeMod::current();
+    if (!native)
+        return false;
+
+    auto &logger = native->getLogger();
+    const fs::path comMojang = findComMojangDirImpl(native->getModDir(), logger);
+    if (comMojang.empty())
+        return false;
+
+    if (active) {
+        registerGlobalResourcePack(comMojang, logger);
+    } else {
+        unregisterGlobalResourcePack(comMojang, logger);
+    }
+    return true;
 }
 
 } // namespace levivision::packs

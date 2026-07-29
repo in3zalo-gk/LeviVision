@@ -3,6 +3,7 @@
 #include "GlowOres.h"
 #include "LeviVision.h"
 #include "NightVision.h"
+#include "PackInstaller.h"
 #include "Utils.h"
 #include "XRay.h"
 
@@ -17,6 +18,12 @@ using pl::modmenu::ButtonEvent;
 using pl::modmenu::ConfigType;
 using pl::modmenu::ModuleBuilder;
 
+void syncResourcePackState(const LeviVisionConfig &cfg) {
+    // The X-Ray and Glow Ores textures live in the same resource pack, so
+    // it's kept active as long as either feature is on.
+    levivision::packs::setResourcePackActive(cfg.xray || cfg.glowOres);
+}
+
 void onModuleToggle(std::string_view /*moduleId*/, bool enabled) {
     auto &mod = LeviVision::instance();
     auto &cfg = mod.config();
@@ -26,6 +33,7 @@ void onModuleToggle(std::string_view /*moduleId*/, bool enabled) {
         NightVision::disable();
         XRay::disable();
         GlowOres::disable();
+        levivision::packs::setResourcePackActive(false);
         mod.getSelf().getLogger().info("LeviVision module disabled.");
         return;
     }
@@ -33,6 +41,7 @@ void onModuleToggle(std::string_view /*moduleId*/, bool enabled) {
     NightVision::applyFromConfig(cfg.nightVision);
     XRay::applyFromConfig(cfg.xray, cfg.transparency, cfg.renderDistance, cfg.outline);
     GlowOres::applyFromConfig(cfg.glowOres, cfg.glowStrength, cfg.renderDistance, cfg.outline);
+    syncResourcePackState(cfg);
     mod.getSelf().getLogger().info("LeviVision module enabled.");
 }
 
@@ -49,11 +58,13 @@ void onConfigChanged(std::string_view /*moduleId*/, std::string_view key,
     } else if (key == "xray") {
         cfg.xray = levivision::utils::parseBool(value, cfg.xray);
         XRay::applyFromConfig(cfg.xray, cfg.transparency, cfg.renderDistance, cfg.outline);
+        syncResourcePackState(cfg);
         logger.info("Config xray = {}", cfg.xray);
     } else if (key == "glowOres") {
         cfg.glowOres = levivision::utils::parseBool(value, cfg.glowOres);
         GlowOres::applyFromConfig(cfg.glowOres, cfg.glowStrength, cfg.renderDistance,
                                   cfg.outline);
+        syncResourcePackState(cfg);
         logger.info("Config glowOres = {}", cfg.glowOres);
     } else if (key == "outline") {
         cfg.outline = levivision::utils::parseBool(value, cfg.outline);
@@ -212,4 +223,5 @@ void ModMenu::applyConfigToModules() {
     NightVision::applyFromConfig(cfg.nightVision);
     XRay::applyFromConfig(cfg.xray, cfg.transparency, cfg.renderDistance, cfg.outline);
     GlowOres::applyFromConfig(cfg.glowOres, cfg.glowStrength, cfg.renderDistance, cfg.outline);
+    levivision::packs::setResourcePackActive(cfg.xray || cfg.glowOres);
 }

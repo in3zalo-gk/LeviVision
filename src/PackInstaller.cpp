@@ -2,6 +2,7 @@
 
 #include <pl/Mod.hpp>
 
+#include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -14,8 +15,13 @@ namespace {
 
 namespace fs = std::filesystem;
 
-constexpr std::string_view kRpUuid = "c4f8a21e-9b3d-4e6a-8f01-2d7c5b9e4a10";
-constexpr std::string_view kRpVersion = "1, 1, 0";
+// header.uuid / header.version for each bundled resource pack, as found in
+// their respective manifest.json. pack_id in global_resource_packs.json
+// refers to the header uuid (not the module uuid).
+constexpr std::string_view kLeviVisionRpUuid = "c4f8a21e-9b3d-4e6a-8f01-2d7c5b9e4a10";
+constexpr std::string_view kLeviVisionRpVersion = "1, 1, 0";
+constexpr std::string_view kUtilityHudUuid = "3971dfda-876e-4a2f-90b1-7fe2ea5346b4";
+constexpr std::string_view kUtilityHudVersion = "1, 0, 0";
 
 // Recursively copy `from` into `to`, overwriting existing files.
 bool copyPackDir(const fs::path &from, const fs::path &to, pl::log::Logger &logger) {
@@ -73,7 +79,7 @@ std::vector<fs::path> candidateComMojangDirs(const fs::path &modDir) {
     return candidates;
 }
 
-std::filesystem::path findComMojangDirImpl(const fs::path &modDir, pl::log::Logger &logger) {
+fs::path findComMojangDirImpl(const fs::path &modDir, pl::log::Logger &logger) {
     for (const auto &candidate : candidateComMojangDirs(modDir)) {
         std::error_code ec;
         const bool found = fs::exists(candidate / "resource_packs", ec) && !ec;
@@ -88,11 +94,13 @@ std::filesystem::path findComMojangDirImpl(const fs::path &modDir, pl::log::Logg
     return {};
 }
 
-// Best-effort: add our resource pack's uuid/version to global_resource_packs.json
-// so it is active without the user opening Global Resources manually.
-// This is plain text manipulation (no JSON dependency) and is safe to skip
-// on any anomaly - worst case the user just activates the pack by hand once.
-void registerGlobalResourcePack(const fs::path &comMojangDir, pl::log::Logger &logger) {
+// Best-effort: add a pack's uuid/version to global_resource_packs.json so it
+// is active without the user opening Global Resources manually. Plain text
+// manipulation (no JSON dependency) - safe to skip on any anomaly, worst
+// case the user just activates the pack by hand once.
+void registerGlobalResourcePack(const fs::path &comMojangDir, std::string_view uuid,
+                                std::string_view version, std::string_view label,
+                                pl::log::Logger &logger) {
     const fs::path jsonPath = comMojangDir / "minecraftpe" / "global_resource_packs.json";
 
     std::error_code ec;
@@ -110,18 +118,17 @@ void registerGlobalResourcePack(const fs::path &comMojangDir, pl::log::Logger &l
         content = ss.str();
     }
 
-    if (content.find(kRpUuid) != std::string::npos) {
-        logger.info("LeviVision RP already registered in global_resource_packs.json");
+    if (content.find(uuid) != std::string::npos) {
+        logger.info("{} already registered in global_resource_packs.json", label);
         return;
     }
 
-    const std::string entry = "{\"pack_id\":\"" + std::string(kRpUuid) + "\",\"version\":[" +
-                               std::string(kRpVersion) + "]}";
+    const std::string entry =
+        "{\"pack_id\":\"" + std::string(uuid) + "\",\"version\":[" + std::string(version) + "]}";
 
     std::string updated;
     auto firstBracket = content.find('[');
     if (firstBracket == std::string::npos) {
-        // Missing or empty file: create a fresh array.
         updated = "[" + entry + "]";
     } else {
         auto lastBracket = content.rfind(']');
@@ -129,7 +136,6 @@ void registerGlobalResourcePack(const fs::path &comMojangDir, pl::log::Logger &l
             updated = "[" + entry + "]";
         } else {
             std::string inner = content.substr(firstBracket + 1, lastBracket - firstBracket - 1);
-            // Trim whitespace to check if array is empty.
             auto isSpace = [](unsigned char c) { return std::isspace(c) != 0; };
             std::string trimmed = inner;
             while (!trimmed.empty() && isSpace(static_cast<unsigned char>(trimmed.front())))
@@ -153,14 +159,15 @@ void registerGlobalResourcePack(const fs::path &comMojangDir, pl::log::Logger &l
         return;
     }
     out << updated;
-    logger.info("LeviVision RP registered in global_resource_packs.json");
+    logger.info("{} registered in global_resource_packs.json", label);
 }
 
-// Removes any JSON object containing our pack's uuid from
-// global_resource_packs.json. Simple brace-matched text surgery (no JSON
-// dependency) - if anything looks unexpected, it leaves the file untouched
-// rather than risk corrupting it.
-void unregisterGlobalResourcePack(const fs::path &comMojangDir, pl::log::Logger &logger) {
+// Removes any JSON object containing `uuid` from global_resource_packs.json.
+// Simple brace-matched text surgery (no JSON dependency) - if anything
+// looks unexpected, it leaves the file untouched rather than risk
+// corrupting it.
+void unregisterGlobalResourcePack(const fs::path &comMojangDir, std::string_view uuid,
+                                  std::string_view label, pl::log::Logger &logger) {
     const fs::path jsonPath = comMojangDir / "minecraftpe" / "global_resource_packs.json";
     if (!fs::exists(jsonPath))
         return;
@@ -171,9 +178,9 @@ void unregisterGlobalResourcePack(const fs::path &comMojangDir, pl::log::Logger 
     std::string content = ss.str();
     in.close();
 
-    auto uuidPos = content.find(kRpUuid);
+    auto uuidPos = content.find(uuid);
     if (uuidPos == std::string::npos)
-        return; // Not present, nothing to do.
+        return;
 
     auto objStart = content.rfind('{', uuidPos);
     auto objEnd = content.find('}', uuidPos);
@@ -184,7 +191,6 @@ void unregisterGlobalResourcePack(const fs::path &comMojangDir, pl::log::Logger 
 
     size_t eraseStart = objStart;
     size_t eraseEnd = objEnd + 1;
-    // Also eat a trailing or leading comma so the array stays valid JSON.
     if (eraseEnd < content.size() && content[eraseEnd] == ',') {
         eraseEnd += 1;
     } else {
@@ -202,7 +208,7 @@ void unregisterGlobalResourcePack(const fs::path &comMojangDir, pl::log::Logger 
         return;
     }
     out << content;
-    logger.info("LeviVision RP removed from global_resource_packs.json");
+    logger.info("{} removed from global_resource_packs.json", label);
 }
 
 } // namespace
@@ -216,6 +222,7 @@ bool installBundledPacks() {
     const fs::path bundledResources = native->getResourceDir();
     const fs::path rpSource = bundledResources / "LeviVision_RP";
     const fs::path bpSource = bundledResources / "LeviVision_BP";
+    const fs::path hudSource = bundledResources / "UtilityHUD";
 
     const fs::path comMojang = findComMojangDirImpl(native->getModDir(), logger);
     if (comMojang.empty())
@@ -223,17 +230,25 @@ bool installBundledPacks() {
 
     bool rpOk = copyPackDir(rpSource, comMojang / "resource_packs" / "LeviVision_RP", logger);
     bool bpOk = copyPackDir(bpSource, comMojang / "behavior_packs" / "LeviVision_BP", logger);
+    bool hudOk = copyPackDir(hudSource, comMojang / "resource_packs" / "UtilityHUD", logger);
 
     if (rpOk) {
-        registerGlobalResourcePack(comMojang, logger);
-        logger.info("LeviVision RP (X-Ray/Glow) auto-installed and activated globally.");
+        registerGlobalResourcePack(comMojang, kLeviVisionRpUuid, kLeviVisionRpVersion,
+                                   "LeviVision RP", logger);
+        logger.info("LeviVision RP (X-Ray/Glow) auto-installed.");
+    }
+    if (hudOk) {
+        registerGlobalResourcePack(comMojang, kUtilityHudUuid, kUtilityHudVersion, "UtilityHUD",
+                                   logger);
+        logger.info("UtilityHUD (chunk border/hitbox) auto-installed and activated. "
+                    "Chunk border needs any item (not a shield) equipped in your offhand.");
     }
     if (bpOk) {
         logger.info("LeviVision BP (Night Vision) auto-installed. Activate it once per world "
                     "you host: World Settings -> Behavior Packs -> LeviVision BP -> Activate.");
     }
 
-    return rpOk || bpOk;
+    return rpOk || bpOk || hudOk;
 }
 
 std::filesystem::path findGameComMojangDir() {
@@ -254,9 +269,10 @@ bool setResourcePackActive(bool active) {
         return false;
 
     if (active) {
-        registerGlobalResourcePack(comMojang, logger);
+        registerGlobalResourcePack(comMojang, kLeviVisionRpUuid, kLeviVisionRpVersion,
+                                   "LeviVision RP", logger);
     } else {
-        unregisterGlobalResourcePack(comMojang, logger);
+        unregisterGlobalResourcePack(comMojang, kLeviVisionRpUuid, "LeviVision RP", logger);
     }
     return true;
 }

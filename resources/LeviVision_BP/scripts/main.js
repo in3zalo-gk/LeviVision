@@ -1,10 +1,7 @@
-// LeviVision - Night Vision via official Script API.
-// Runs only in worlds this device hosts (singleplayer or a server you own).
-// Does not use cheats/commands, so it never disables achievements.
 import { world, system } from "@minecraft/server";
 
-const NIGHT_VISION_DURATION_TICKS = 200; // 10s; refreshed continuously below
-const REFRESH_INTERVAL_TICKS = 100; // every 5s
+const NIGHT_VISION_DURATION_TICKS = 200;
+const REFRESH_INTERVAL_TICKS = 100;
 
 function applyNightVision() {
     for (const player of world.getAllPlayers()) {
@@ -14,7 +11,7 @@ function applyNightVision() {
                 showParticles: false,
             });
         } catch (e) {
-            // Player may not be fully spawned yet; ignore and retry next interval.
+            // Player not fully spawned yet; retry next interval.
         }
     }
 }

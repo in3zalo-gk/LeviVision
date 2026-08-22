@@ -19,8 +19,6 @@ using pl::modmenu::ConfigType;
 using pl::modmenu::ModuleBuilder;
 
 void syncResourcePackState(const LeviVisionConfig &cfg) {
-    // The X-Ray and Glow Ores textures live in the same resource pack, so
-    // it's kept active as long as either feature is on.
     levivision::packs::setResourcePackActive(cfg.xray || cfg.glowOres);
 }
 
@@ -29,7 +27,6 @@ void onModuleToggle(std::string_view /*moduleId*/, bool enabled) {
     auto &cfg = mod.config();
 
     if (!enabled) {
-        // Master module off: disable visual effects but keep saved toggles.
         NightVision::disable();
         XRay::disable();
         GlowOres::disable();
@@ -98,8 +95,6 @@ void onConfigChanged(std::string_view /*moduleId*/, std::string_view key,
     mod.saveConfig();
 }
 
-// Currently unused: onEvent callback for the floating button, which is
-// temporarily disabled (see registerButtons() below).
 [[maybe_unused]] void onFloatingButton(std::string_view /*buttonId*/, ButtonEvent event, float /*value*/) {
     if (event != ButtonEvent::Click)
         return;
@@ -107,7 +102,6 @@ void onConfigChanged(std::string_view /*moduleId*/, std::string_view key,
     auto &mod = LeviVision::instance();
     auto &cfg = mod.config();
 
-    // Quick cycle: all off -> NV -> XRay -> Glow -> all visual off
     const bool any = cfg.nightVision || cfg.xray || cfg.glowOres;
     if (!any) {
         cfg.nightVision = true;
@@ -181,11 +175,7 @@ bool ModMenu::unregisterModules() {
 bool ModMenu::registerButtons() {
     // DISABLED: the floating quick-toggle button was crashing the launcher
     // with SIGSEGV inside pl::modmenu::registerButton() (confirmed via
-    // xCrash tombstone — memcpy inside libpreloader.so's internal button
-    // registration path). The main config module (Night Vision / X-Ray /
-    // Glow Ores toggles) does not go through this code path and is
-    // unaffected. Re-enable once the exact cause is confirmed against the
-    // real preloader-android headers/source.
+    // xCrash tombstone). Re-enable once confirmed safe.
     (void)0;
     return true;
 

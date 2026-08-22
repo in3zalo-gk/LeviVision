@@ -15,15 +15,13 @@ namespace {
 
 namespace fs = std::filesystem;
 
-// header.uuid / header.version for each bundled resource pack, as found in
-// their respective manifest.json. pack_id in global_resource_packs.json
-// refers to the header uuid (not the module uuid).
 constexpr std::string_view kLeviVisionRpUuid = "c4f8a21e-9b3d-4e6a-8f01-2d7c5b9e4a10";
 constexpr std::string_view kLeviVisionRpVersion = "1, 1, 0";
 constexpr std::string_view kUtilityHudUuid = "3971dfda-876e-4a2f-90b1-7fe2ea5346b4";
 constexpr std::string_view kUtilityHudVersion = "1, 0, 0";
+constexpr std::string_view kShaderUuid = "a1cf2ab9-3834-455e-8658-c10ccfb403a4";
+constexpr std::string_view kShaderVersion = "1, 1, 0";
 
-// Recursively copy `from` into `to`, overwriting existing files.
 bool copyPackDir(const fs::path &from, const fs::path &to, pl::log::Logger &logger) {
     std::error_code ec;
     if (!fs::exists(from, ec) || ec) {
@@ -46,21 +44,14 @@ bool copyPackDir(const fs::path &from, const fs::path &to, pl::log::Logger &logg
     return true;
 }
 
-// Walk upward from the mod's own install directory looking for a
-// "com.mojang" folder that already contains resource_packs/. This works
-// regardless of exactly how the launcher lays out its app-data directory,
-// since it's anchored to the mod's own (documented) getModDir().
 std::vector<fs::path> candidateComMojangDirs(const fs::path &modDir) {
     std::vector<fs::path> candidates;
 
     // Confirmed real path on LeviLauncher (found via device inspection):
-    // shared/external media storage, not the app's private data dir.
     candidates.emplace_back(
         "/storage/emulated/0/Android/media/org.levimc.launcher/minecraft/_shared/internal/"
         "games/com.mojang");
 
-    // Walk upward from the mod's own install directory as a fallback, in
-    // case the launcher's layout differs on other devices/versions.
     fs::path cursor = modDir;
     for (int i = 0; i < 8 && cursor.has_parent_path(); ++i) {
         cursor = cursor.parent_path();
@@ -69,7 +60,6 @@ std::vector<fs::path> candidateComMojangDirs(const fs::path &modDir) {
         candidates.push_back(cursor / "com.mojang");
     }
 
-    // Other known Android layouts, tried as a last resort.
     candidates.emplace_back(
         "/storage/emulated/0/Android/data/org.levimc.launcher/files/games/com.mojang");
     candidates.emplace_back(
@@ -89,15 +79,10 @@ fs::path findComMojangDirImpl(const fs::path &modDir, pl::log::Logger &logger) {
             return candidate;
         }
     }
-    logger.warn("Could not locate the game's com.mojang folder automatically. "
-                "Packs were not auto-installed; import the .mcpack files manually.");
+    logger.warn("Could not locate the game's com.mojang folder automatically.");
     return {};
 }
 
-// Best-effort: add a pack's uuid/version to global_resource_packs.json so it
-// is active without the user opening Global Resources manually. Plain text
-// manipulation (no JSON dependency) - safe to skip on any anomaly, worst
-// case the user just activates the pack by hand once.
 void registerGlobalResourcePack(const fs::path &comMojangDir, std::string_view uuid,
                                 std::string_view version, std::string_view label,
                                 pl::log::Logger &logger) {
@@ -162,10 +147,6 @@ void registerGlobalResourcePack(const fs::path &comMojangDir, std::string_view u
     logger.info("{} registered in global_resource_packs.json", label);
 }
 
-// Removes any JSON object containing `uuid` from global_resource_packs.json.
-// Simple brace-matched text surgery (no JSON dependency) - if anything
-// looks unexpected, it leaves the file untouched rather than risk
-// corrupting it.
 void unregisterGlobalResourcePack(const fs::path &comMojangDir, std::string_view uuid,
                                   std::string_view label, pl::log::Logger &logger) {
     const fs::path jsonPath = comMojangDir / "minecraftpe" / "global_resource_packs.json";
@@ -223,6 +204,7 @@ bool installBundledPacks() {
     const fs::path rpSource = bundledResources / "LeviVision_RP";
     const fs::path bpSource = bundledResources / "LeviVision_BP";
     const fs::path hudSource = bundledResources / "UtilityHUD";
+    const fs::path shaderSource = bundledResources / "RedstoneTechShader";
 
     const fs::path comMojang = findComMojangDirImpl(native->getModDir(), logger);
     if (comMojang.empty())
@@ -231,24 +213,30 @@ bool installBundledPacks() {
     bool rpOk = copyPackDir(rpSource, comMojang / "resource_packs" / "LeviVision_RP", logger);
     bool bpOk = copyPackDir(bpSource, comMojang / "behavior_packs" / "LeviVision_BP", logger);
     bool hudOk = copyPackDir(hudSource, comMojang / "resource_packs" / "UtilityHUD", logger);
+    bool shaderOk = copyPackDir(shaderSource, comMojang / "resource_packs" / "RedstoneTechShader",
+                                logger);
 
     if (rpOk) {
         registerGlobalResourcePack(comMojang, kLeviVisionRpUuid, kLeviVisionRpVersion,
                                    "LeviVision RP", logger);
-        logger.info("LeviVision RP (X-Ray/Glow) auto-installed.");
     }
     if (hudOk) {
         registerGlobalResourcePack(comMojang, kUtilityHudUuid, kUtilityHudVersion, "UtilityHUD",
                                    logger);
-        logger.info("UtilityHUD (chunk border/hitbox) auto-installed and activated. "
-                    "Chunk border needs any item (not a shield) equipped in your offhand.");
+        logger.info("UtilityHUD (chunk border/hitbox) auto-installed and activated.");
+    }
+    if (shaderOk) {
+        registerGlobalResourcePack(comMojang, kShaderUuid, kShaderVersion, "RedstoneTechShader",
+                                   logger);
+        logger.info("RedstoneTechShader auto-installed. Use the gear icon next to it in "
+                    "Global Resources to pick X-ray / NightVision / LightOverlay variants.");
     }
     if (bpOk) {
         logger.info("LeviVision BP (Night Vision) auto-installed. Activate it once per world "
                     "you host: World Settings -> Behavior Packs -> LeviVision BP -> Activate.");
     }
 
-    return rpOk || bpOk || hudOk;
+    return rpOk || bpOk || hudOk || shaderOk;
 }
 
 std::filesystem::path findGameComMojangDir() {

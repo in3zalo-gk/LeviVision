@@ -12,17 +12,12 @@
 namespace levivision::gamesettings {
 
 namespace {
-
 namespace fs = std::filesystem;
 
-// Absurdly high on purpose: turns caves/night fully bright, well beyond
-// what the in-game slider allows (normally clamped to ~1.0).
 constexpr const char *kExtremeGammaValue = "1000000.0";
 constexpr const char *kNormalGammaValue = "1.0";
-// Confirmed real Bedrock options.txt key (NOT "gamma:", which is the
-// Java Edition key name).
+// Confirmed real Bedrock options.txt key (NOT "gamma:", the Java key name).
 constexpr const char *kGammaKey = "gfx_gamma:";
-
 } // namespace
 
 bool setExtremeGamma(bool enabled) {
@@ -53,7 +48,6 @@ bool setExtremeGamma(bool enabled) {
     const std::string targetValue = enabled ? kExtremeGammaValue : kNormalGammaValue;
     const std::string newLine = std::string(kGammaKey) + targetValue;
 
-    // Replace an existing "gfx_gamma:<value>" line, or append one.
     std::istringstream lines(content);
     std::ostringstream rebuilt;
     std::string line;
@@ -78,8 +72,7 @@ bool setExtremeGamma(bool enabled) {
     out << rebuilt.str();
 
     logger.info("Gamma set to {} in {}", targetValue, optionsPath.string());
-    logger.info("Fully close and reopen Minecraft for this to take effect "
-                "(options.txt is only read at startup).");
+    logger.info("Fully close and reopen Minecraft for this to take effect.");
     return true;
 }
 

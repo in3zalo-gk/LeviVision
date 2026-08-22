@@ -20,14 +20,10 @@ public:
     bool disable();
     bool unload();
 
-    /// Access typed config (valid after successful load()).
     [[nodiscard]] LeviVisionConfig &config();
     [[nodiscard]] const LeviVisionConfig &config() const;
 
-    /// Persist current config to disk.
     bool saveConfig();
-
-    /// Reload config from disk into memory.
     bool reloadConfig();
 
 private:

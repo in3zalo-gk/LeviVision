@@ -37,8 +37,6 @@ void NightVision::setEnabled(bool enabled) {
 void NightVision::update() {
     if (!mEnabled)
         return;
-
-    // Per-frame or periodic night-vision maintenance if needed.
 }
 
 bool NightVision::isEnabled() {

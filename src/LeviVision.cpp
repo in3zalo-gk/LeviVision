@@ -56,9 +56,6 @@ bool LeviVision::reloadConfig() {
 bool LeviVision::load() {
     mSelf = pl::mod::NativeMod::current();
     if (mSelf == nullptr) {
-        // Never abort the host process — log through a standalone logger and
-        // bail out of load() gracefully. The preloader can retry/report this
-        // as a failed mod load instead of taking the whole game down.
         pl::log::Logger::getOrCreate("LeviVision")
             .error("NativeMod::current() was null during load(); aborting mod load safely.");
         return false;
@@ -89,9 +86,6 @@ bool LeviVision::load() {
     mConfigFile.emplace();
 
     if (!mConfigFile->load()) {
-        // Do not abort mod load: keep in-memory defaults and continue.
-        // Returning false here can make the preloader treat the mod as failed
-        // and may destabilize startup depending on launcher version.
         logger.warn("Typed config load/save failed; using in-memory defaults.");
         mConfigValue = LeviVisionConfig{};
     } else {

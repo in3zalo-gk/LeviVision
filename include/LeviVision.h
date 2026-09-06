@@ -29,8 +29,8 @@ public:
 private:
     // Resolved lazily in load(), NOT in the constructor: PL_REGISTER_MOD may
     // materialize this singleton before the preloader has finished setting
-    // the "current mod" pointer. Touching NativeMod::current() too early was
-    // causing the whole game process to crash on launch.
+    // the "current mod" pointer. Touching NativeMod::current() too early
+    // crashed the whole game process on launch.
     pl::mod::NativeMod *mSelf = nullptr;
     LeviVisionConfig mConfigValue{};
     std::optional<pl::config::ConfigFile<LeviVisionConfig>> mConfigFile;

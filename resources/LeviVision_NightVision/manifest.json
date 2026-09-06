@@ -1,0 +1,32 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "LeviVision Night Vision",
+    "description": "LeviVision variant, based on RedstoneTechShader (OEOTYAN/Jumao15071).",
+    "uuid": "d8f4db04-bcd9-4f13-9871-4a9b94f370a6",
+    "version": [
+      1,
+      1,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      26,
+      30
+    ]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "6985d666-a708-4f3c-a908-33f77365074f",
+      "version": [
+        1,
+        1,
+        0
+      ]
+    }
+  ],
+  "capabilities": [
+    "pbr"
+  ]
+}

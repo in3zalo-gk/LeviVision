@@ -1,11 +1,7 @@
 #include "LeviVision.h"
 
-#include "GlowOres.h"
-#include "Hooks.h"
 #include "ModMenu.h"
-#include "NightVision.h"
 #include "PackInstaller.h"
-#include "XRay.h"
 
 #include <filesystem>
 
@@ -64,29 +60,27 @@ bool LeviVision::load() {
     auto &logger = mSelf->getLogger();
 
     logger.info("====================================");
-    logger.info("  LeviVision v1.0.0");
+    logger.info("  LeviVision v2.0.0 (X-Ray + Night Vision)");
     logger.info("  Author: Say");
     logger.info("====================================");
 
     std::error_code ec;
     std::filesystem::create_directories(mSelf->getDataDir(), ec);
     if (ec) {
-        logger.error("Failed to create data dir {}: {}", mSelf->getDataDir().string(),
-                     ec.message());
+        logger.error("Failed to create data dir: {}", ec.message());
         return false;
     }
 
     std::filesystem::create_directories(mSelf->getConfigDir(), ec);
     if (ec) {
-        logger.error("Failed to create config dir {}: {}", mSelf->getConfigDir().string(),
-                     ec.message());
+        logger.error("Failed to create config dir: {}", ec.message());
         return false;
     }
 
     mConfigFile.emplace();
 
     if (!mConfigFile->load()) {
-        logger.warn("Typed config load/save failed; using in-memory defaults.");
+        logger.warn("Config load/save failed; using in-memory defaults.");
         mConfigValue = LeviVisionConfig{};
     } else {
         mConfigValue = mConfigFile->value();
@@ -95,17 +89,13 @@ bool LeviVision::load() {
     if (mConfigValue.version < 1)
         mConfigValue.version = 1;
 
-    logger.info("Config loaded (NV={} XRay={} Glow={} Outline={} RD={} TP={} GS={})",
-                mConfigValue.nightVision, mConfigValue.xray, mConfigValue.glowOres,
-                mConfigValue.outline, mConfigValue.renderDistance, mConfigValue.transparency,
-                mConfigValue.glowStrength);
-
+    logger.info("Config loaded (NV={} XRay={})", mConfigValue.nightVision, mConfigValue.xray);
     return true;
 }
 
 bool LeviVision::enable() {
     if (mSelf == nullptr) {
-        pl::log::Logger::getOrCreate("LeviVision").error("enable() called before a successful load().");
+        pl::log::Logger::getOrCreate("LeviVision").error("enable() called before load().");
         return false;
     }
     auto &logger = mSelf->getLogger();
@@ -115,42 +105,27 @@ bool LeviVision::enable() {
         logger.warn("Mod Menu module registration failed.");
     }
 
-    if (!ModMenu::registerButtons()) {
-        logger.warn("Floating button registration failed.");
-    }
-
-    if (!levivision::hooks::install()) {
-        logger.warn("Hook install reported failure (continuing in soft mode).");
-    }
+    // NOTE: floating button intentionally NOT registered here.
+    // pl::modmenu::registerButton() caused a confirmed SIGSEGV crash
+    // (verified via xCrash tombstone). Do not re-enable without a fresh
+    // crash log confirming it is safe.
 
     if (!levivision::packs::installBundledPacks()) {
-        logger.warn("Could not auto-install bundled resource/behavior packs; "
+        logger.warn("Could not auto-install the bundled shader pack; "
                     "see previous log lines for details.");
     }
 
-    ModMenu::applyConfigToModules();
-
-    logger.info("LeviVision enabled.");
+    logger.info("LeviVision enabled. Open Global Resources and tap the gear icon next to "
+                "RedstoneTechShader to pick X-Ray or Night Vision.");
     return true;
 }
 
 bool LeviVision::disable() {
     if (mSelf == nullptr)
         return true;
-    auto &logger = mSelf->getLogger();
-    logger.info("Disabling LeviVision...");
-
-    NightVision::disable();
-    XRay::disable();
-    GlowOres::disable();
-
-    ModMenu::unregisterButtons();
+    mSelf->getLogger().info("Disabling LeviVision...");
     ModMenu::unregisterModules();
-    levivision::hooks::uninstall();
-
     saveConfig();
-
-    logger.info("LeviVision disabled.");
     return true;
 }
 
